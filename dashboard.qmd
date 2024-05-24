@@ -1,5 +1,5 @@
 ---
-title: "Teststatistieken"
+title: "Cursussen - W. De Keyzer"
 format:
   dashboard:
     logo: "images/logo_cads_white.png"
