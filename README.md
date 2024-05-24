@@ -1,3 +1,3 @@
 # Placeholder content
 
-Placeholder text content.
+Placeholder for text content.
