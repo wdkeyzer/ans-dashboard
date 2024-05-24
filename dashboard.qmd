@@ -8,7 +8,7 @@ format:
 
 ## Column {width="35%"}
 
-Placeholder text for the left column.
+Placeholder text for the first column.
 
 ```{r, load packages}
 #| echo: false
@@ -26,16 +26,16 @@ head(starwars)
 
 ## Column {width="65%"}
 
-Placeholder text for the right column.
+Placeholder text for the second column.
 
 ### Row {height=10%}
 
-Placeholder text for columns right, row 1.
+Placeholder text for the second column, row 1.
 
 ### Row {height=70%}
 
-Placeholder text for columns right, row 2.
+Placeholder text for the second column, row 2.
 
 ### Row {height=20%}
 
-Placeholder text for columns right, row 3.
+Placeholder text for the second column, row 3.
