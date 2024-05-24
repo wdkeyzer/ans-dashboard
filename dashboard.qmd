@@ -1,0 +1,41 @@
+---
+title: "Teststatistieken"
+format:
+  dashboard:
+    logo: "images/logo_cads_white.png"
+    orientation: columns
+---
+
+## Column {width="35%"}
+
+Placeholder text for the left column.
+
+```{r, load packages}
+#| echo: false
+#| include: false
+library(tidyverse)
+```
+
+```{r, print starwars}
+head(starwars)
+```
+
+```{r})
+```
+
+
+## Column {width="65%"}
+
+Placeholder text for the right column.
+
+### Row {height=10%}
+
+Placeholder text for columns right, row 1.
+
+### Row {height=70%}
+
+Placeholder text for columns right, row 2.
+
+### Row {height=20%}
+
+Placeholder text for columns right, row 3.
