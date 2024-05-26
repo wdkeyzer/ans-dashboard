@@ -14,11 +14,50 @@ Placeholder text for the first column.
 #| echo: false
 #| include: false
 library(tidyverse)
+library(httr2)
 ```
 
-```{r, print starwars}
-head(starwars)
+```{r, list courses}
+#| echo: false
+
+ANS_TOKEN <- Sys.getenv("ANS_API_TOKEN")
+ANS_id <-  Sys.getenv("ANS_API_ID")
+
+# request courses
+req_courses <- request(paste0("https://ans.app/api/v2/schools/", ANS_id, "/courses")) |>
+  req_headers(
+    accept = "application/json",
+    Authorization = paste("Bearer", ANS_TOKEN)
+    )|>
+  req_url_query(
+    items = "20",
+    page = "1",
+  ) |>
+  req_perform()
+
+# extract result from the response
+results_courses <- req_courses |>
+  resp_body_json()
+
+# extract all names
+names <- map_chr(results_courses, "name")
+
+# extract all ids
+ids <- map_chr(results_courses, "id")
+
+# Function to select specific elements from each sublist and replace NULLs with NAs
+select_elements <- function(x) {
+  x[sapply(x, is.null)] <- NA
+  as_tibble(x)
+}
+
+# extract all elements and turn into a tibble
+courses_tbl <- map_dfr(results_courses, select_elements)
+
+courses_tbl |> 
+  select(id, name, year, course_code) 
 ```
+
 
 ```{r})
 ```
