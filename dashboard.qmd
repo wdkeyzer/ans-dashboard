@@ -21,7 +21,7 @@ library(httr2)
 #| echo: false
 
 ANS_API_TOKEN <- Sys.getenv("ANS_API_TOKEN")
-ANS_API_SCHOOL_ID <-  Sys.getenv("ANS_API_ID")
+ANS_API_SCHOOL_ID <-  Sys.getenv("ANS_API_SCHOOL_ID")
 
 # request courses
 res_courses <- request(paste0("https://ans.app/api/v2/schools/", ANS_API_SCHOOL_ID, "/courses")) |>
@@ -37,10 +37,10 @@ res_courses <- request(paste0("https://ans.app/api/v2/schools/", ANS_API_SCHOOL_
   resp_body_json()
 
 # extract all names
-names <- map_chr(res_courses, "name")
+# names <- map_chr(res_courses, "name")
 
 # extract all ids
-ids <- map_int(res_courses, "id")
+# ids <- map_int(res_courses, "id")
 
 # Function to replace NULLs with NAs
 select_elements <- function(x) {
@@ -53,8 +53,6 @@ courses_tbl <- map_dfr(res_courses, select_elements)
 
 courses_tbl |> 
   select(id, name, year, course_code) 
-
-
 ```
 
 
