@@ -36,4 +36,4 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           ANS_API_TOKEN: ${{ secrets.ANS_API_TOKEN }}
-          ANS_API_SCHOOL_ID: ${{ secrets.ANS_API_ID }}
+          ANS_API_SCHOOL_ID: ${{ secrets.ANS_API_SCHOOL_ID }}
