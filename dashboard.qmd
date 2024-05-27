@@ -56,7 +56,20 @@ courses_tbl |>
 ```
 
 
-```{r, list quesiotn banks}
+
+## Column {width="65%"}
+
+Placeholder text for the second column.
+
+### Row {height=10%}
+
+Placeholder text for the second column, row 1.
+
+### Row {height=70%}
+
+Placeholder text for the second column, row 2.
+
+```{r, list question banks}
 # request question banks
 res_question_banks <- request("https://ans.app/api/v2/question_banks") |>
   req_headers(
@@ -78,18 +91,6 @@ question_banks_tbl |>
 
 ```
 
-
-## Column {width="65%"}
-
-Placeholder text for the second column.
-
-### Row {height=10%}
-
-Placeholder text for the second column, row 1.
-
-### Row {height=70%}
-
-Placeholder text for the second column, row 2.
 
 ### Row {height=20%}
 
