@@ -20,46 +20,64 @@ library(httr2)
 ```{r, list courses}
 #| echo: false
 
-ANS_TOKEN <- Sys.getenv("ANS_API_TOKEN")
-ANS_id <-  Sys.getenv("ANS_API_ID")
+ANS_API_TOKEN <- Sys.getenv("ANS_API_TOKEN")
+ANS_API_SCHOOL_ID <-  Sys.getenv("ANS_API_ID")
 
 # request courses
-req_courses <- request(paste0("https://ans.app/api/v2/schools/", ANS_id, "/courses")) |>
+res_courses <- request(paste0("https://ans.app/api/v2/schools/", ANS_API_SCHOOL_ID, "/courses")) |>
   req_headers(
     accept = "application/json",
-    Authorization = paste("Bearer", ANS_TOKEN)
+    Authorization = paste("Bearer", ANS_API_TOKEN)
     )|>
   req_url_query(
     items = "20",
     page = "1",
   ) |>
-  req_perform()
-
-# extract result from the response
-results_courses <- req_courses |>
+  req_perform() |> 
   resp_body_json()
 
 # extract all names
-names <- map_chr(results_courses, "name")
+names <- map_chr(res_courses, "name")
 
 # extract all ids
-ids <- map_chr(results_courses, "id")
+ids <- map_int(res_courses, "id")
 
-# Function to select specific elements from each sublist and replace NULLs with NAs
+# Function to replace NULLs with NAs
 select_elements <- function(x) {
   x[sapply(x, is.null)] <- NA
   as_tibble(x)
 }
 
 # extract all elements and turn into a tibble
-courses_tbl <- map_dfr(results_courses, select_elements)
+courses_tbl <- map_dfr(res_courses, select_elements)
 
 courses_tbl |> 
   select(id, name, year, course_code) 
+
+
 ```
 
 
-```{r})
+```{r, list quesiotn banks}
+# request question banks
+res_question_banks <- request("https://ans.app/api/v2/question_banks") |>
+  req_headers(
+    accept = "application/json",
+    Authorization = paste("Bearer", ANS_API_TOKEN)
+    )|>
+  req_url_query(
+    items = "100",
+    page = "1",
+  ) |>
+  req_perform() |> 
+  resp_body_json()
+
+# extract all elements and turn into a tibble
+question_banks_tbl <- map_dfr(res_question_banks, select_elements)
+
+question_banks_tbl |> 
+  select(id, name) 
+
 ```
 
 
