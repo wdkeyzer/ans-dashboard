@@ -14,8 +14,8 @@ website:
 
 format:
   html:
-    # theme: minty
-    theme: [cosmo, custom.scss]
+    theme: journal
+    # theme: [cosmo, custom.scss]
     toc: true
 
 

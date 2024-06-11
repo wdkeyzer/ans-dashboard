@@ -1,28 +1,89 @@
 ---
-title: "Cursussen - W. De Keyzer"
+title: "ANS Dashboard - W. De Keyzer"
 format:
   dashboard:
     logo: "images/logo_cads_white.png"
     orientation: columns
 ---
 
-## Column {width="35%"}
-
-Placeholder text for the first column.
-
 ```{r, load packages}
 #| echo: false
 #| include: false
 library(tidyverse)
 library(httr2)
+library(gt)
 ```
 
-```{r, list courses}
+# Page 1
+
+## Column {width="35%"}
+
+Placeholder text for the first column.
+
+```{r, set API}
 #| echo: false
 
 ANS_API_TOKEN <- Sys.getenv("ANS_API_TOKEN")
 ANS_API_SCHOOL_ID <-  Sys.getenv("ANS_API_SCHOOL_ID")
+```
 
+```{r, function replace NULL}
+# Function to replace NULLs with NAs
+select_elements <- function(x) {
+  x[sapply(x, is.null)] <- NA
+  as_tibble(x)
+}
+```
+
+```{r list classes}
+
+res_classes <- request(paste0("https://ans.app/api/v2/schools/", ANS_API_SCHOOL_ID, "/classes")) |>
+  req_headers(
+    accept = "application/json",
+    Authorization = paste("Bearer", ANS_API_TOKEN)
+    )|>
+  req_url_query(
+    items = "100",
+    page = "1",
+  ) |>
+  req_perform() |> 
+  resp_body_json() |> 
+  append(
+    request(paste0("https://ans.app/api/v2/schools/", ANS_API_SCHOOL_ID, "/classes")) |>
+      req_headers(
+    accept = "application/json",
+    Authorization = paste("Bearer", ANS_API_TOKEN)
+    )|>
+  req_url_query(
+    items = "100",
+    page = "2",
+  ) |>
+  req_perform() |> 
+  resp_body_json()
+  )
+
+# extract all elements and turn into a tibble
+classes_tbl <- map_dfr(res_classes, select_elements)
+
+classes_tbl |> 
+  select(id, name, year) |> 
+  arrange(name) |> 
+  gt() |> 
+  tab_header(title = "Classes")
+
+```
+
+## Column {width="65%"}
+
+Placeholder text for the second column.
+
+### Row {height=10%}
+
+Placeholder text for the second column, row 1.
+
+### Row {height=70%}
+
+```{r, list courses}
 # request courses
 res_courses <- request(paste0("https://ans.app/api/v2/schools/", ANS_API_SCHOOL_ID, "/courses")) |>
   req_headers(
@@ -36,40 +97,20 @@ res_courses <- request(paste0("https://ans.app/api/v2/schools/", ANS_API_SCHOOL_
   req_perform() |> 
   resp_body_json()
 
-# extract all names
-# names <- map_chr(res_courses, "name")
-
-# extract all ids
-# ids <- map_int(res_courses, "id")
-
-# Function to replace NULLs with NAs
-select_elements <- function(x) {
-  x[sapply(x, is.null)] <- NA
-  as_tibble(x)
-}
-
 # extract all elements and turn into a tibble
 courses_tbl <- map_dfr(res_courses, select_elements)
 
 courses_tbl |> 
-  select(id, name, year, course_code) 
+  select(id, name, year, course_code) |> 
+  arrange(-year) |>
+  filter(!is.na(course_code)) |> 
+  gt() |> 
+  tab_header(title = "Courses")
+
 ```
 
-
-
-## Column {width="65%"}
-
-Placeholder text for the second column.
-
-### Row {height=10%}
-
-Placeholder text for the second column, row 1.
-
-### Row {height=70%}
-
-Placeholder text for the second column, row 2.
-
 ```{r, list question banks}
+
 # request question banks
 res_question_banks <- request("https://ans.app/api/v2/question_banks") |>
   req_headers(
@@ -87,11 +128,185 @@ res_question_banks <- request("https://ans.app/api/v2/question_banks") |>
 question_banks_tbl <- map_dfr(res_question_banks, select_elements)
 
 question_banks_tbl |> 
-  select(id, name) 
+  select(id, name) |> 
+  arrange(name) |> 
+  gt() |> 
+  tab_header(title = "Question Banks")
 
 ```
 
+```{r, list assignments}
+
+fetch_assignments <- function(course_ids, courses_tbl, api_token) {
+  
+  # Initialize an empty dataframe to store the assignments
+  assignments_tbl <- data.frame(
+    assignment_id = character(),
+    course_id = character(),
+    course_name = character(),
+    year = integer(),
+    name = character(),
+    question_bank_assignment_id = character(),
+    start_url = character(),
+    stringsAsFactors = FALSE
+  )
+  
+  # Loop over each course_id
+  for (course_id in course_ids) {
+    # request assignments
+    res_assignments <- request(paste0("https://ans.app/api/v2/courses/", 
+                                  course_id, 
+                                  "/assignments")) |>
+    req_headers(
+      accept = "application/json",
+      Authorization = paste("Bearer", api_token)
+      )|>
+    req_url_query(
+      items = "100",
+      page = "1"
+      ) |>
+    req_perform() |> 
+    resp_body_json()
+    
+    # Check if there are any assignments
+    if (length(res_assignments) > 0) {
+    
+    # Extract assignments and convert to dataframe
+    temp_tbl <- data.frame(
+      assignment_id = sapply(res_assignments, function(x) { if (!is.null(x$id)) x$id else NA }),
+      course_id = sapply(res_assignments, function(x) { if (!is.null(x$course_id)) x$course_id else NA }),
+      course_name = sapply(res_assignments, function(x) { if (!is.null(x$course_id)) courses_tbl$name[match(x$course_id, courses_tbl$id)] else NA }),
+      year = sapply(res_assignments, function(x) { if (!is.null(x$course_id)) courses_tbl$year[match(x$course_id, courses_tbl$id)] else NA }),
+      name = sapply(res_assignments, function(x) { if (!is.null(x$name)) x$name else NA }),
+      question_bank_assignment_id = sapply(res_assignments, function(x) { if (!is.null(x$question_bank_assignment_id)) x$question_bank_assignment_id else NA }),
+      start_url = sapply(res_assignments, function(x) { if (!is.null(x$start_url)) x$start_url else NA }),
+      stringsAsFactors = FALSE
+    )
+    
+    # Append to the main dataframe
+    assignments_tbl <- rbind(assignments_tbl, temp_tbl)
+    }
+  }
+  return(assignments_tbl)
+}
+
+# course_ids <- sapply(res_courses, function(x) x$id)
+course_ids <-  courses_tbl |> filter(!is.na(course_code)) |> pull(id)
+
+assignments_tbl <- fetch_assignments(course_ids, courses_tbl, ANS_API_TOKEN)
+
+assignments_tbl |> 
+  select(assignment_id, course_name, year, name, question_bank_assignment_id,start_url) |> 
+  arrange(-year, name) |> 
+  gt() |> 
+  tab_header(title = "Assignments")
+
+```
 
 ### Row {height=20%}
 
 Placeholder text for the second column, row 3.
+
+# Page 2
+
+
+```{r, get results}
+
+assignment_id <- 1042609
+
+fetch_all_results <- function(assignment_id, ANS_API_TOKEN) {
+  all_results <- list()
+  page <- 1
+  items_per_page <- 100
+  has_more_results <- TRUE
+  
+  while (has_more_results) {
+    res <- request(paste0("https://ans.app/api/v2/assignments/", assignment_id, "/results")) |>
+      req_headers(
+        accept = "application/json",
+        Authorization = paste("Bearer", ANS_API_TOKEN)
+      ) |>
+      req_url_query(
+        items = as.character(items_per_page),
+        page = as.character(page)
+      ) |>
+      req_perform() |>
+      resp_body_json()
+    
+    # Append the current page of results to all_results
+    all_results <- c(all_results, res)
+    
+    # Check if the number of results is less than the items per page
+    if (length(res) < items_per_page) {
+      has_more_results <- FALSE
+    } else {
+      page <- page + 1
+    }
+  }
+  
+  return(all_results)
+}
+
+
+results <- fetch_all_results(assignment_id, ANS_API_TOKEN)
+
+results_tbl <- data.frame(
+  user_id = sapply(results, function(x) { if (!is.null(x$user_id)) x$user_id else NA }),
+  grade = sapply(results, function(x) { if (!is.null(x$grade)) x$grade else NA })
+) |> 
+  mutate(grade = as.numeric(grade)) 
+
+# summary statistics
+results_tbl |>
+  summarise(
+    n = n(),
+    mean = mean(grade, na.rm = TRUE) |> round(2),
+    sd = sd(grade, na.rm = TRUE) |> round(2),
+    median = median(grade, na.rm = TRUE),
+    min = min(grade, na.rm = TRUE),
+    max = max(grade, na.rm = TRUE),
+    PASS = (sum(grade >= 10, na.rm = TRUE) / n() * 100) |> round(2)
+  ) |> 
+  gt() |>
+  tab_header(title = paste(assignments_tbl$course_name[assignments_tbl$assignment_id == assignment_id],
+                           " | ",
+                           assignments_tbl$name[assignments_tbl$assignment_id == assignment_id]))
+
+```
+
+
+# Page 3
+
+```{r list users}
+
+# list groups
+# /api/v2/courses/{course_id}/groups
+
+# list users
+# /api/v2/groups/{id}
+
+# show insights
+# /api/v2/insights/assignments/{id}
+
+```
+
+
+```{r}
+# /api/v2/question_bank_assignments/{question_bank_assignment_id}/question_bank_assignment_results
+```
+
+```{r}
+
+# List question banks
+# ​/api​/v2​/question_banks
+```
+
+
+```{r}
+# list results
+# /api/v2/assignments/{assignment_id}/results
+
+```
+
+
+<!-- DOMAINS > OBJECTIVES > QUESTIONS > QUESTION BANKS > ASSIGNMENTS > INSIGHTS -->
